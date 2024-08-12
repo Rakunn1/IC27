@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request, session
 import pandas as pd
 import numpy as np
 import io
@@ -10,6 +10,7 @@ import IC27_etl as etl
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+app.secret_key = 'Ftrmnd_IC27'
 
 
 def prediction_model():
@@ -35,11 +36,10 @@ def prediction_model():
     a, b = coeffs
     expected_diff = round((a*(len(dates_lst)+1) + b))
 
-    return dates_lst, delays, linear_regression, expected_diff
+    return dates_lst.tolist(), delays.tolist(), linear_regression.tolist(), expected_diff
 
 
-def generate_plot():
-    dates_lst, delays, linear_regression, expected_diff = prediction_model()
+def generate_plot(dates_lst, delays, linear_regression):
 
     dates = np.arange(1, len(dates_lst) + 1)
 
@@ -63,8 +63,12 @@ def generate_plot():
 
 @app.route('/', methods=['GET'])
 def index():
-    plot_url = generate_plot()
-    return render_template('index.html', plot_url=plot_url)
+    dates_lst, delays, linear_regression, expected_diff = prediction_model()
+    session['dates_lst'] = dates_lst
+    session['delays'] = delays
+    session['linear_regression'] = linear_regression
+    session['expected_diff'] = expected_diff
+    return render_template('index.html')
 
 
 @app.route('/predict', methods=['GET'])
@@ -72,10 +76,10 @@ def predict_route():
     # route for solving Jaana's problem and printing output
     next_thursday = (datetime.now() + timedelta((3 - datetime.now().weekday()) % 7))
 
-    expected_diff = prediction_model()[-1]
+    expected_diff = session.get('expected_diff')
 
     scheduled_time_datetime = etl.fetch_scheduled_time(next_thursday)
-    eta_time_datetime = scheduled_time_datetime.replace(tzinfo=None)  + timedelta(seconds=expected_diff)
+    eta_time_datetime = scheduled_time_datetime.replace(tzinfo=None) + timedelta(seconds=expected_diff)
     four_fifteen = datetime.combine(eta_time_datetime.date(), datetime(2000, 1, 1, 16, 15).time())
     arrivment_ind = (four_fifteen - eta_time_datetime) > timedelta(minutes=15)
 
@@ -93,7 +97,10 @@ def predict_route():
 
 @app.route('/generate-plot')
 def generate_plot_route():
-    plot_img = generate_plot()
+    dates_lst = session.get('dates_lst')
+    delays = session.get('delays')
+    linear_regression = session.get('linear_regression')
+    plot_img = generate_plot(dates_lst, delays, linear_regression)
     return plot_img
 
 
