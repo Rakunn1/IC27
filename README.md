@@ -1,6 +1,7 @@
+remember to place config.ini file in project directory
+
 pip install -r requirements.txt
 
 python IC27_app.py
-
 
 app available at http://localhost:5000
