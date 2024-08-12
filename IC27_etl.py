@@ -109,10 +109,7 @@ def save_data(train_time_table_df):
 
     merge_sql = f'''
         MERGE INTO {table_name} AS tgt
-        USING (select * from(
-                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY TRAIN_NUMBER, DEPARTURE_DATE, T.station_ui_code, T.type ORDER BY departure_date) AS ROW_NUMBER
-                  FROM train_schema.{temp_table_name}  t)
-                where row_number = 1) AS src
+        USING train_schema.{temp_table_name} AS src
            ON (tgt.train_number = src.train_number AND
                tgt.departure_date = src.departure_date AND
                tgt.station_ui_code = src.station_ui_code AND
@@ -137,16 +134,19 @@ def save_data(train_time_table_df):
     cs = ctx.cursor()
 
     try:
+        values_str = ''
         cs.execute("USE SCHEMA train_schema")
         yield 'Switching to train_schema'
         yield 'Populating stage table...'
         cs.execute(f'TRUNCATE TABLE train_schema.{temp_table_name}')
         for _, row in train_time_table_df.iterrows():
-            print(f"{row['trainNumber']}, '{row['departureDate']}', '{row['stationShortCode']}', {row['stationUICCode']}, '{row['type']}', '{row['scheduledTime']}', '{row['actualTime']}")
-            cs.execute(f"""
-            INSERT INTO {temp_table_name} (train_number, departure_date, station_code, station_ui_code, type, scheduled_arrival_time, actual_arrival_time)
-            VALUES ({row['trainNumber']}, '{row['departureDate']}', '{row['stationShortCode']}', {row['stationUICCode']}, '{row['type']}', '{row['scheduledTime']}', '{row['actualTime']}')
-            """)
+            values_str += f"('{row['trainNumber']}', '{row['departureDate']}', '{row['stationShortCode']}', {row['stationUICCode']}, '{row['type']}', '{row['scheduledTime']}', '{row['actualTime']}'), "
+        values_str = values_str.strip().rstrip(',')
+        insert_sql = f"""
+        INSERT INTO {temp_table_name} (train_number, departure_date, station_code, station_ui_code, type, scheduled_arrival_time, actual_arrival_time)
+        VALUES {values_str}
+        """
+        cs.execute(insert_sql)
         ctx.commit()
         yield 'DONE'
         yield 'Merging data...'
@@ -183,6 +183,8 @@ def wfl_fetch_period(start_date, end_date):
 
                 if fetched_data is not None:
                     train_time_table_df = pd.concat([train_time_table_df, fetched_data], ignore_index=True)
+                    train_time_table_df = train_time_table_df.drop_duplicates(subset=['trainNumber', 'departureDate', 'stationUICCode', 'type'])
+
 
         for message in save_data(train_time_table_df):
             yield message
