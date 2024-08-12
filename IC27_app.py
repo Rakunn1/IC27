@@ -84,7 +84,7 @@ def predict_route():
     scheduled_time_datetime = etl.fetch_scheduled_time(next_thursday)
     eta_time_datetime = scheduled_time_datetime.replace(tzinfo=None) + timedelta(seconds=expected_diff)
     four_fifteen = datetime.combine(eta_time_datetime.date(), datetime(2000, 1, 1, 16, 15).time())
-    arrivment_ind = (four_fifteen - eta_time_datetime) > timedelta(minutes=15)
+    arrivment_ind = 'Yes' if (four_fifteen - eta_time_datetime) > timedelta(minutes=15) else 'No'
 
     scheduledDate = scheduled_time_datetime.strftime('%Y-%m-%d')
     scheduledTime = scheduled_time_datetime.strftime('%H:%M:%S')
@@ -94,7 +94,7 @@ def predict_route():
         yield f'data: Predicting arrival time of train IC27 at Tampere for {scheduledDate}\n\n'
         yield f'data: Scheduled Time: {scheduledTime}\n\n'
         yield f'data: ETA: {eta}\n\n'
-        yield f'data: Will Jaana arrive at time: {arrivment_ind}\n\n'
+        yield f'data: Will Jaana arrive at time? {arrivment_ind}.\n\n'
     return app.response_class(generate(), mimetype='text/event-stream')
 
 
