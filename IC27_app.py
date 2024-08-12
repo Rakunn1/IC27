@@ -35,15 +35,18 @@ def prediction_model():
     a, b = coeffs
     expected_diff = round((a*(len(dates_lst)+1) + b))
 
-    return dates, delays, linear_regression, expected_diff
+    return dates_lst, delays, linear_regression, expected_diff
 
 
 def generate_plot():
-    dates, delays, linear_regression = (prediction_model()[n] for n in range(3))
+    dates_lst, delays, linear_regression, expected_diff = prediction_model()
+
+    dates = np.arange(1, len(dates_lst) + 1)
 
     plt.figure(figsize=(10, 5))
     plt.plot(dates, delays, label='delays', marker='o')
     plt.plot(dates, linear_regression, label='regression curve', linestyle='--')
+    plt.xticks(dates, dates_lst, rotation=45, ha='right')
     plt.xlabel('Thursdays')
     plt.ylabel('Delays [sec]')
     plt.title('IC27 delays vs prediction')
@@ -67,7 +70,7 @@ def index():
 @app.route('/predict', methods=['GET'])
 def predict_route():
     # route for solving Jaana's problem and printing output
-    next_thursday = (datetime.now() + timedelta((3 - datetime.now().weekday()) % 7 + 4))
+    next_thursday = (datetime.now() + timedelta((3 - datetime.now().weekday()) % 7))
 
     expected_diff = prediction_model()[-1]
 

@@ -86,6 +86,7 @@ def fetch_prediction_data():
      WHERE DAYNAME(departure_date) = 'Thu'
        AND type = 'ARRIVAL'
        AND station_code = 'TPE'
+     ORDER BY departure_date
     """
 
     ctx = sc.connect(**conn_params)
