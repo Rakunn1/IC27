@@ -15,6 +15,7 @@ conn_params = {
     'autocommit': 'false'
 }
 
+
 def validate_connection(conn_params):
     ctx = sc.connect(**conn_params)
     try:
@@ -26,6 +27,7 @@ def validate_connection(conn_params):
         raise e
     finally:
         ctx.close()
+
 
 def fetch_data(date, train_number=27):
     # returns a dataframe containing specific train run on a specific day
@@ -54,6 +56,7 @@ def fetch_data(date, train_number=27):
     else:
         yield f'API response FAILED with status code {response.status_code}'
 
+
 def fetch_scheduled_time(day):
     # fetch scheduled time of arrival of train (default: IC27) at Tampere (UI Code 160)
     url = f"https://rata.digitraffic.fi/api/v1/trains/{day.strftime('%Y-%m-%d')}/27"
@@ -72,14 +75,15 @@ def fetch_scheduled_time(day):
 
     return time_datetime
 
+
 def fetch_prediction_data():
     # fetch data for prediction, choose only time difference between actual and scheduled time
     # for thursdays arrivals at Tampere station
     query = """
     SELECT departure_date,
-           DATEDIFF('second', actual_arrival_time, scheduled_arrival_time) AS time_difference
+           DATEDIFF('second', scheduled_arrival_time, actual_arrival_time) AS time_difference
       FROM train_schema.train_time_table
-     WHERE DAYNAME(departure_date) = 'Thursday'
+     WHERE DAYNAME(departure_date) = 'Thu'
        AND type = 'ARRIVAL'
        AND station_code = 'TPE'
     """
@@ -90,7 +94,8 @@ def fetch_prediction_data():
     finally:
         ctx.close()
 
-    return df['departure_date'].values, df['time_difference'].values
+    return df['DEPARTURE_DATE'].values, df['TIME_DIFFERENCE'].values
+
 
 def save_data(train_time_table_df):
     # merges dataframe provided to tables on train_db
@@ -100,7 +105,10 @@ def save_data(train_time_table_df):
 
     merge_sql = f'''
         MERGE INTO {table_name} AS tgt
-        USING {temp_table_name} AS src
+        USING (select * from(
+                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY TRAIN_NUMBER, DEPARTURE_DATE, T.station_ui_code, T.type ORDER BY departure_date) AS ROW_NUMBER
+                  FROM train_schema.{temp_table_name}  t)
+                where row_number = 1) AS src
            ON (tgt.train_number = src.train_number AND
                tgt.departure_date = src.departure_date AND
                tgt.station_ui_code = src.station_ui_code AND
@@ -149,9 +157,11 @@ def save_data(train_time_table_df):
     finally:
         ctx.close()
 
+
 def wfl_fetch_period(start_date, end_date):
     # workflow to fetch data on demand for train runs for given period
     dates = pd.date_range(start=start_date, end=end_date)
+    #dates = [date for date in dates if date.weekday()==3]
 
     def generate():
         train_time_table_df = pd.DataFrame()
