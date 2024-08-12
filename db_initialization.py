@@ -1,13 +1,15 @@
 import snowflake.connector as sc
 import tab_config
-
 import logging
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 conn_params = {
-    'account': 'vm08742.west-europe.azure',
-    'user': 'HKOTARSKIIC27',
-    'password': 'Ftrmnd_IC27'
+    'account': config['snowflake']['account'],
+    'user': config['snowflake']['user'],
+    'password': config['snowflake']['password']
 }
 
 ctx = sc.connect(**conn_params)

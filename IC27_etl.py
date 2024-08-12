@@ -5,11 +5,14 @@ from time import sleep
 from datetime import datetime, timedelta
 import snowflake.connector as sc
 import pytz
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 conn_params = {
-    'account': 'vm08742.west-europe.azure',
-    'user': 'HKOTARSKIIC27',
-    'password': 'Ftrmnd_IC27',
+    'account': config['snowflake']['account'],
+    'user': config['snowflake']['user'],
+    'password': config['snowflake']['password'],
     'database': 'train_db',
     'warehouse': 'train_wh',
     'autocommit': 'false'

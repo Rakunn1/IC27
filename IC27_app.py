@@ -43,6 +43,9 @@ def generate_plot(dates_lst, delays, linear_regression):
 
     dates = np.arange(1, len(dates_lst) + 1)
 
+    # converting data back to expected format after serialization
+    dates_lst = [datetime.strptime(day, '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d') for day in dates_lst]
+
     plt.figure(figsize=(10, 5))
     plt.plot(dates, delays, label='delays', marker='o')
     plt.plot(dates, linear_regression, label='regression curve', linestyle='--')
