@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IC27 Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <div class="container">
+        <h1>IC27 predictor</h1>
+
+        <div id="prediction_log"></div>
+
+        <button class="btn" onclick="makePrediction()">Predict</button>
+
+        <!-- plot -->
+        <div id="plot-div">
+            <img id="plot-img" src="" alt="Wykres średnich opóźnień" />
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="etl-div">
+            <h1>Orchestration</h1>
+
+            <form id="fetch-form" action="{{ url_for('fetch_period') }}" method="POST">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" required>
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" required>
+                <button class="btn" type="submit" id="submit-form">Fetch Period</button>
+            </form>
+
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="img01">
+    </div>
+
+</body>
+</html>
