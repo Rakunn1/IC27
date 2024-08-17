@@ -21,5 +21,9 @@
 <p>The <b>IC27 Predictor</b> is designed to address Janna's problem - predicting whether she can arrive on time via train. To make a prediction, click the green button, which generates a description, answere, and a graph showing train delay data along with regression curve used for prediction.</p>
 <p>In the <b>Orchestration</b> section, user can download data for a specified period. This data is stored on database and used for predictions.</p>
 
+
 <h4><i>2. Data Layer</i></h4>
-<p></p>
+<p>Hstorical data from the actual arrival times of the trains is used to make predictions. The Open Data Portal of the Finnish Traffic Agency 
+ provides an API for querying the railway traffic history. A subset of the retrieved data is stored in a Snowflake database and queried during predictions.</p>
+ <p>The <b>ETL process</b> is implemented via the Fetch Period feature in Orchestration section. This process involves validating the database connection, fetching data for each date within the selected period, selecting relevant fields, and storing the data in the database. Data is only inserted if it isn't already present in the ODS table and a staging table is utilized to ensure maximum accessibility.</p>
+ <p>For <b>predictions</b>, the database is queried for historical differences between actual and scheduled arrival times at Tampere Station. This data is then used to calculate the expected delay, which is added to the scheduled arrival time for the next Thursday, fetched from the API.</p>
